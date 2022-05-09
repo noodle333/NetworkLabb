@@ -1,17 +1,57 @@
-using Microsoft.AspNetCore.Mvc;
+using System;
+using System.Text.Json;
+using RestSharp;
 
-[Route("pokemon")]
-[ApiController]
-public class PokemonController : ControllerBase
+class Program
 {
-    [HttpGet]
-    public ActionResult Get()
+    static async void Main(string[] args)
     {
-        Pokemon poke = new Pokemon();
-        poke.Name = "Ditto";
-        poke.Hp = 2000;
-        poke.Type = "Shapeshifter";
+        RestClient pokeClient = new RestClient("https://pokeapi.co/api/v2");
+        while (true)
+        {
+            Console.WriteLine("Which pokemon?");
+            RestRequest request;
+            request = GetUserInput();
+            RestResponse response = await pokeClient.GetAsync(request);
 
-        return Ok(poke);
+            if (response.StatusCode == System.Net.HttpStatusCode.NotFound)
+            {
+                Console.WriteLine("Not found!");
+            }
+            else
+            {
+                Pokemon poke = JsonSerializer.Deserialize<Pokemon>(response.Content);
+                Console.WriteLine($"Name: {poke.Name}   id: {poke.Id}");
+            }
+            // if (IsValid(response))
+            // {
+            //     Pokemon poke = JsonSerializer.Deserialize<Pokemon>(response.Content);
+            //     Console.WriteLine($"Name: {poke.Name}   id: {poke.Id}");
+            // }
+            // else
+            // {
+            //     Console.WriteLine("Not Found! Please enter a valid input...");
+            // }
+        }
+    }
+    static RestRequest GetUserInput()
+    {
+        string userInput = Console.ReadLine();
+
+        RestRequest request = new RestRequest($"pokemon/{userInput}");
+
+        return request;
+    }
+
+    static bool IsValid(RestResponse resp)
+    {
+        if (resp.StatusCode == System.Net.HttpStatusCode.NotFound)
+        {
+            return false;
+        }
+        else
+        {
+            return true;
+        }
     }
 }
